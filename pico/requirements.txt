@@ -1,0 +1,6 @@
+# None needed. 
+# Core dependencies (included in MicroPython)
+# - machine
+# - json
+# - time
+# - _thread (if threading is needed)
