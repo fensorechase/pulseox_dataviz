@@ -1,2 +1,0 @@
-# None needed. 
-# Core dependencies (included in MicroPython)
