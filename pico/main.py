@@ -48,17 +48,22 @@ if 0x57 in devices:
                         print(f"Collected {sample_count} valid samples")
                 
                 # Send a sample of raw data (5 points for red and IR to keep bandwidth reasonable)
-                if len(red_data) >= 5 and len(ir_data) >= 5:
-                    # Take 5 samples for raw visualization
+                if len(red_data) > 0 and len(ir_data) > 0:
+                    # Send a few sample points for visualization
+                    # (take just a subset to not overwhelm the connection)
+                    sample_size = min(5, len(red_data), len(ir_data))
+                    
                     raw_packet = {
                         'type': 'raw',
                         'timestamp': time.ticks_ms(),
-                        'red': red_data[:5],
-                        'ir': ir_data[:5]
+                        'red': red_data[:sample_size],
+                        'ir': ir_data[:sample_size]
                     }
                     
                     # Send raw data packet
-                    uart.write(json.dumps(raw_packet) + '\n')
+                    json_str = json.dumps(raw_packet)
+                    uart.write(json_str + '\n')
+                    print("Debug - Raw data sent")  # This will be a separate line
                 
                 # Small delay to prevent overwhelming the serial connection
                 time.sleep(0.1)

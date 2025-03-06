@@ -35,9 +35,10 @@ const SpO2Monitor = () => {
     };
     
     ws.onmessage = (event) => {
-      console.log("Received message:", event.data);
       try {
+        console.log("Received message length:", event.data.length);
         const message = JSON.parse(event.data);
+        console.log("Message type:", message.type);
         
         // Handle different data types
         if (message.type === 'spo2') {
@@ -50,7 +51,10 @@ const SpO2Monitor = () => {
           });
         } 
         else if (message.type === 'raw') {
-          setRawData(message.data);
+          console.log("Raw data received:", message.data);
+          if (message.data) {
+            setRawData(message.data);
+          }
         }
       } catch (e) {
         console.error("Error processing message:", e);

@@ -64,24 +64,22 @@ async function initializeSerialPort() {
     const MAX_BUFFER_SIZE = 100;
 
     parser.on('data', (data) => {
-        console.log('Received raw data:', data);
+        console.log('Received data:', data);
         try {
-            // Check if the data begins with "{" to avoid parsing non-JSON data
+            // Check if the data begins with "{" to ensure it's JSON
             if (data.trim().startsWith('{')) {
                 const parsedData = JSON.parse(data);
                 
-                // Add real timestamp if needed
-                if (!parsedData.timestamp) {
-                    parsedData.timestamp = Date.now();
-                } else if (parsedData.timestamp < 1000000000000) {
-                    // If timestamp is in milliseconds since boot, add to real timestamp
-                    // but keep original for sequence info
-                    parsedData.originalTimestamp = parsedData.timestamp;
-                    parsedData.timestamp = Date.now();
-                }
-                
                 // Process data based on type
                 if (parsedData.type === 'spo2') {
+                    console.log('Processed SpO2 data:', parsedData.spo2);
+                    
+                    // Add real timestamp if needed
+                    if (parsedData.timestamp < 1000000000000) {
+                        parsedData.originalTimestamp = parsedData.timestamp;
+                        parsedData.timestamp = Date.now();
+                    }
+                    
                     // Broadcast SpO2 data to clients
                     wss.clients.forEach(client => {
                         if (client.readyState === WebSocket.OPEN) {
@@ -90,31 +88,16 @@ async function initializeSerialPort() {
                     });
                 } 
                 else if (parsedData.type === 'raw') {
-                    // Add raw data to buffer
-                    const timestamp = parsedData.timestamp;
+                    console.log('Processed raw data, red/ir samples:', parsedData.red.length);
                     
-                    // Add each data point with a slight time offset to simulate sequence
-                    for (let i = 0; i < parsedData.red.length; i++) {
-                        rawDataBuffer.red.push(parsedData.red[i]);
-                        rawDataBuffer.ir.push(parsedData.ir[i]);
-                        rawDataBuffer.timestamps.push(timestamp + i * 20); // 20ms offset between points
-                        
-                        // Limit buffer size
-                        if (rawDataBuffer.red.length > MAX_BUFFER_SIZE) {
-                            rawDataBuffer.red.shift();
-                            rawDataBuffer.ir.shift();
-                            rawDataBuffer.timestamps.shift();
-                        }
-                    }
-                    
-                    // Prepare data packet for clients
+                    // Create a properly formatted raw data packet
                     const rawPacket = {
                         type: 'raw',
                         timestamp: Date.now(),
                         data: {
-                            red: rawDataBuffer.red,
-                            ir: rawDataBuffer.ir,
-                            timestamps: rawDataBuffer.timestamps
+                            red: parsedData.red,
+                            ir: parsedData.ir,
+                            timestamps: parsedData.red.map(() => Date.now())  // Generate timestamps
                         }
                     };
                     
@@ -126,7 +109,7 @@ async function initializeSerialPort() {
                     });
                 }
             } else {
-                console.log('Received non-JSON data, ignoring:', data);
+                console.log('Non-JSON data:', data);
             }
         } catch (e) {
             console.error('Error parsing data:', e);
