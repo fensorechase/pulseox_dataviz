@@ -1,6 +1,3 @@
-// STEP 1: RUN THIS SCRIPT: node server.js
-// STEP 2: Run web-app via 'npm run dev'
-// Update your server.js file with these changes
 const express = require('express');
 const { SerialPort } = require('serialport');
 const { ReadlineParser } = require('@serialport/parser-readline');
@@ -13,6 +10,15 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 
+// Debug flag
+const DEBUG = true;
+
+function debugLog(...args) {
+    if (DEBUG) {
+        console.log('[DEBUG]', ...args);
+    }
+}
+
 // List available serial ports
 async function listPorts() {
     const ports = await SerialPort.list();
@@ -20,6 +26,7 @@ async function listPorts() {
     ports.forEach(port => {
         console.log(`${port.path} - ${port.manufacturer || 'Unknown manufacturer'}`);
     });
+    debugLog('Ports detail:', ports);
     return ports;
 }
 
@@ -27,16 +34,13 @@ async function listPorts() {
 let serialPort;
 async function initializeSerialPort() {
     const ports = await listPorts();
-    // Look for Raspberry Pi Pico or MicroPython port
     const picoPort = ports.find(port => 
-        port.manufacturer?.includes('Raspberry Pi') || 
-        port.manufacturer?.includes('Microsoft') ||
         port.manufacturer?.includes('MicroPython') ||
         port.path.includes('usbmodem')
     );
 
     if (!picoPort) {
-        console.error('No Raspberry Pi Pico found. Please connect the device.');
+        console.error('No Pico found. Please connect the device.');
         return false;
     }
 
@@ -53,87 +57,110 @@ async function initializeSerialPort() {
         console.error('Serial port error:', err);
     });
 
-    // Buffer to store raw signal data
-    let rawDataBuffer = {
-        red: [],
-        ir: [],
-        timestamps: []
-    };
-    
-    // Maximum number of points to keep in buffer
-    const MAX_BUFFER_SIZE = 100;
+    let lastRawDataTime = 0;
+    const RAW_DATA_INTERVAL = 50; // Minimum time between raw data broadcasts (ms)
 
     parser.on('data', (data) => {
-        console.log('Received data:', data);
         try {
-            // Check if the data begins with "{" to ensure it's JSON
-            if (data.trim().startsWith('{')) {
-                const parsedData = JSON.parse(data);
+            // Clean up incoming data
+            let cleanData = data;
+            if (data.includes('Sent packet:')) {
+                cleanData = data.split('Sent packet:')[1].trim();
+            }
+            
+            debugLog('Received data:', cleanData);
+
+            if (cleanData.startsWith('{')) {
+                const parsedData = JSON.parse(cleanData);
                 
-                // Process data based on type
                 if (parsedData.type === 'spo2') {
-                    console.log('Processed SpO2 data:', parsedData.spo2);
-                    
-                    // Add real timestamp if needed
-                    if (parsedData.timestamp < 1000000000000) {
-                        parsedData.originalTimestamp = parsedData.timestamp;
-                        parsedData.timestamp = Date.now();
-                    }
-                    
-                    // Broadcast SpO2 data to clients
-                    wss.clients.forEach(client => {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify(parsedData));
-                        }
-                    });
-                } 
-                else if (parsedData.type === 'raw') {
-                    console.log('Processed raw data, red/ir samples:', parsedData.red.length);
-                    
-                    // Create a properly formatted raw data packet
-                    const rawPacket = {
-                        type: 'raw',
-                        timestamp: Date.now(),
-                        data: {
-                            red: parsedData.red,
-                            ir: parsedData.ir,
-                            timestamps: parsedData.red.map(() => Date.now())  // Generate timestamps
-                        }
+                    const spo2Packet = {
+                        type: 'spo2',
+                        timestamp: parsedData.timestamp || Date.now(),
+                        spo2: parseFloat(parsedData.spo2)
                     };
                     
-                    // Broadcast raw data to clients
-                    wss.clients.forEach(client => {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify(rawPacket));
-                        }
-                    });
+                    debugLog('Broadcasting SpO2:', spo2Packet);
+                    broadcastData(spo2Packet);
+                } 
+                else if (parsedData.type === 'raw') {
+                    const currentTime = Date.now();
+                    
+                    // Rate limit raw data broadcasts
+                    if (currentTime - lastRawDataTime >= RAW_DATA_INTERVAL) {
+                        const rawPacket = {
+                            type: 'raw',
+                            data: {
+                                red: parsedData.red || [],
+                                ir: parsedData.ir || [],
+                                timestamps: Array.from(
+                                    { length: parsedData.red?.length || 0 },
+                                    (_, i) => currentTime + (i * 20)
+                                )
+                            }
+                        };
+                        
+                        debugLog('Broadcasting raw data:', {
+                            redLength: rawPacket.data.red.length,
+                            irLength: rawPacket.data.ir.length
+                        });
+                        
+                        broadcastData(rawPacket);
+                        lastRawDataTime = currentTime;
+                    }
                 }
-            } else {
-                console.log('Non-JSON data:', data);
+            } else if (!data.includes('I2C devices found') && 
+                      !data.includes('initialized') && 
+                      !data.includes('Starting')) {
+                debugLog('Non-JSON data:', data);
             }
         } catch (e) {
-            console.error('Error parsing data:', e);
+            console.error('Error processing data:', e);
+            debugLog('Problematic data:', data);
         }
     });
 
     return true;
 }
 
+// Broadcast data to all connected clients
+function broadcastData(data) {
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            try {
+                client.send(JSON.stringify(data));
+            } catch (e) {
+                console.error('Error broadcasting to client:', e);
+            }
+        }
+    });
+}
+
 // WebSocket connection handling
 wss.on('connection', (ws) => {
     console.log('Client connected');
+    debugLog('New WebSocket client connected');
+    
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
     
     ws.on('close', () => {
         console.log('Client disconnected');
+        debugLog('WebSocket client disconnected');
     });
 });
 
 // HTTP endpoints
 app.get('/status', (req, res) => {
-    res.json({ 
+    debugLog('Status request received');
+    const status = {
         connected: serialPort?.isOpen || false,
-        port: serialPort?.path || null
-    });
+        port: serialPort?.path || null,
+        timestamp: Date.now()
+    };
+    debugLog('Sending status:', status);
+    res.json(status);
 });
 
 // Start the server
@@ -143,5 +170,19 @@ server.listen(PORT, async () => {
     const success = await initializeSerialPort();
     if (!success) {
         console.log('Failed to initialize serial port. Please check the connection and restart the server.');
+    } else {
+        debugLog('Serial port initialized successfully');
     }
+});
+
+// Handle process termination
+process.on('SIGINT', () => {
+    console.log('Shutting down server...');
+    if (serialPort?.isOpen) {
+        serialPort.close();
+    }
+    server.close(() => {
+        console.log('Server shut down complete');
+        process.exit(0);
+    });
 });
