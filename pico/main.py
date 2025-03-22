@@ -1,4 +1,3 @@
-# Update your main.py file with these changes
 from machine import I2C, Pin, UART
 import json
 import time
@@ -18,59 +17,57 @@ if 0x57 in devices:
     # Initialize UART for USB communication
     uart = UART(0, baudrate=115200)
     
+    def send_packet(packet):
+        """Helper function to send JSON packets"""
+        try:
+            json_str = json.dumps(packet)
+            uart.write(json_str + '\n')
+            print("Sent packet:", json_str)  # Debug print
+            
+            # Print sample values if it's raw data
+            if packet.get('type') == 'raw':
+                print("Sample values - Red:", packet['red'][:5], "IR:", packet['ir'][:5])
+                
+        except Exception as e:
+            print("Error sending packet:", e)
+    
     def main():
         print("Starting SpO2 monitoring...")
-        sample_count = 0
         
         while True:
             try:
                 # Read sensor data
-                red_data, ir_data = sensor.read_sequential(amount=50)  # 50 samples
+                red_data, ir_data = sensor.read_sequential(amount=50)
                 
-                # Calculate SpO2 directly with the modified sensor class
+                # Calculate SpO2
                 hr, hr_valid, spo2, spo2_valid = sensor.calc_hr_and_spo2(ir_data, red_data)
                 
-                # Create data packet with SpO2 value
-                if spo2_valid:
-                    # Send the calculated SpO2 value
-                    spo2_packet = {
-                        'type': 'spo2',
-                        'timestamp': time.ticks_ms(),
-                        'spo2': spo2
-                    }
-                    
-                    # Send data over UART with newline delimiter
-                    uart.write(json.dumps(spo2_packet) + '\n')
-                    print(json.dumps(spo2_packet))
-                    
-                    sample_count += 1
-                    if sample_count % 10 == 0:
-                        print(f"Collected {sample_count} valid samples")
+                current_time = time.ticks_ms()
                 
-                # Send a sample of raw data (5 points for red and IR to keep bandwidth reasonable)
+                # Send raw data first
                 if len(red_data) > 0 and len(ir_data) > 0:
-                    # Send a few sample points for visualization
-                    # (take just a subset to not overwhelm the connection)
-                    sample_size = min(5, len(red_data), len(ir_data))
-                    
                     raw_packet = {
                         'type': 'raw',
-                        'timestamp': time.ticks_ms(),
-                        'red': red_data[:sample_size],
-                        'ir': ir_data[:sample_size]
+                        'red': list(red_data),  # Convert to list for JSON serialization
+                        'ir': list(ir_data),
+                        'timestamp': current_time
                     }
-                    
-                    # Send raw data packet
-                    json_str = json.dumps(raw_packet)
-                    uart.write(json_str + '\n')
-                    print("Debug - Raw data sent")  # This will be a separate line
+                    send_packet(raw_packet)
                 
-                # Small delay to prevent overwhelming the serial connection
-                time.sleep(0.1)
+                # Send SpO2 if valid
+                if spo2_valid:
+                    spo2_packet = {
+                        'type': 'spo2',
+                        'spo2': float(spo2),
+                        'timestamp': current_time
+                    }
+                    send_packet(spo2_packet)
+                
+                time.sleep(0.1)  # 100ms delay
                 
             except Exception as e:
-                print("Error:", e)
-                time.sleep(0.5)  # Increased delay after error
+                print("Error in main loop:", e)
+                time.sleep(0.5)
     
     if __name__ == "__main__":
         main()

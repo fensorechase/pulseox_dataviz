@@ -1,6 +1,7 @@
 # -*-coding:utf-8-*-
 
 # MicroPython version - removed __future__ import
+# max30102.py
 from time import sleep
 from machine import I2C, Pin
 
@@ -237,7 +238,8 @@ class MAX30102():
             
             # SpO2 approximation formula (empirical)
             # This is a simplified formula, not medically accurate
-            spo2 = 110 - 25 * R
+            # OLD: spo2 = 110 - 25 * R
+            spo2 = 115 - 23 * R  # Adjusted formula
             
             # Constrain to valid SpO2 range
             spo2 = min(max(spo2, 0), 100)

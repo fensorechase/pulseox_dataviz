@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './SpO2Monitor.css';
 import RawSignalMonitor from './RawSignalMonitor';
@@ -11,31 +11,37 @@ const SpO2Monitor = () => {
   const [activeTab, setActiveTab] = useState('spo2');
   const [stats, setStats] = useState({ min: 0, max: 0, avg: 0 });
   const [startTime, setStartTime] = useState(Date.now());
+  const ws = useRef(null);
 
-  const resetMonitoring = () => {
-    setSpo2Data([]);
-    setStats({ min: 0, max: 0, avg: 0 });
-    setStartTime(Date.now());
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="custom-tooltip">
+          <p>{`SpO2: ${payload[0].value.toFixed(1)}%`}</p>
+        </div>
+      );
+    }
+    return null;
   };
 
   const connectToBridge = useCallback(() => {
     console.log("Connecting to WebSocket...");
-    const ws = new WebSocket('ws://localhost:3001');
+    ws.current = new WebSocket('ws://localhost:3001');
 
-    ws.onopen = () => {
+    ws.current.onopen = () => {
       console.log("WebSocket connected");
       setIsConnected(true);
       setError(null);
     };
 
-    ws.onclose = () => {
+    ws.current.onclose = () => {
       console.log("WebSocket disconnected");
       setIsConnected(false);
       setError('Connection lost. Retrying...');
       setTimeout(connectToBridge, 2000);
     };
 
-    ws.onmessage = (event) => {
+    ws.current.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
 
@@ -64,7 +70,7 @@ const SpO2Monitor = () => {
           setRawData({
             red: message.data?.red || message.red || [],
             ir: message.data?.ir || message.ir || [],
-            timestamp: message.timestamp
+            timestamp: message.timestamp || Date.now()
           });
         }
       } catch (e) {
@@ -73,27 +79,31 @@ const SpO2Monitor = () => {
     };
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        ws.current.close();
       }
     };
   }, [startTime]);
+
+  const resetMonitoring = useCallback(() => {
+    // Clear all data immediately
+    setSpo2Data([]);
+    setStats({ min: 0, max: 0, avg: 0 });
+    setStartTime(Date.now());
+    
+    // Clear any existing WebSocket connection
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.close();
+    }
+    
+    // Reconnect to start fresh
+    connectToBridge();
+  }, [connectToBridge]);
 
   useEffect(() => {
     const cleanup = connectToBridge();
     return cleanup;
   }, [connectToBridge]);
-
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="custom-tooltip">
-          <p>{`SpO2: ${payload[0].value.toFixed(1)}%`}</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="monitor-container">
@@ -137,15 +147,16 @@ const SpO2Monitor = () => {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart 
                 data={spo2Data}
-                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                margin={{ top: 20, right: 50, left: 20, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="relativeTime"
                   type="number"
-                  domain={[0, 'auto']}
-                  tickFormatter={(value) => value.toFixed(0)}
+                  domain={['dataMin', 'dataMax']}
+                  tick={false}
                   label={{ value: 'Time (s)', position: 'bottom', offset: 0 }}
+                  padding={{ left: 20, right: 20 }}
                 />
                 <YAxis 
                   domain={[80, 100]}
@@ -165,6 +176,7 @@ const SpO2Monitor = () => {
                   name="SpO2"
                   dot={false}
                   isAnimationActive={false}
+                  connectNulls={true}
                 />
               </LineChart>
             </ResponsiveContainer>
