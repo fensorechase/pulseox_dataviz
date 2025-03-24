@@ -34,17 +34,35 @@ async function listPorts() {
 let serialPort;
 async function initializeSerialPort() {
     const ports = await listPorts();
-    const picoPort = ports.find(port => 
-        port.manufacturer?.includes('MicroPython') ||
-        port.path.includes('usbmodem')
-    );
+    
+    // More flexible port detection for different OS/configurations
+    const picoPort = ports.find(port => {
+        const identifiers = [
+            // Manufacturer identifiers
+            port.manufacturer?.includes('MicroPython'),
+            port.manufacturer?.includes('Raspberry Pi'),
+            // Path patterns for different OS
+            /usb/i.test(port.path),
+            /usbmodem/i.test(port.path),
+            /COM/i.test(port.path),
+            /tty/i.test(port.path),
+            // Additional identifiers
+            port.vendorId === '2e8a',  // Raspberry Pi Pico vendor ID
+            port.productId === '0005'   // Common Pico product ID
+        ];
+        
+        return identifiers.some(id => id);
+    });
 
     if (!picoPort) {
-        console.error('No Pico found. Please connect the device.');
+        console.error('No compatible device found. Please check connection and try these troubleshooting steps:');
+        console.error('1. Unplug and replug the device');
+        console.error('2. Available ports found:', ports.map(p => `\n   - ${p.path} (${p.manufacturer || 'Unknown manufacturer'})`).join(''));
         return false;
     }
 
     console.log('Using port:', picoPort.path);
+    debugLog('Port details:', picoPort);
 
     serialPort = new SerialPort({
         path: picoPort.path,
