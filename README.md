@@ -2,7 +2,7 @@
 
 **Background**: This project was developed to demonstrate what blood oxygen saturation is, and how a device (e.g., pulse oximeter) can approximate blood oxygen saturation from a non-invasive measurement on the finger. We use a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to calculate oxygen saturation level (SpO2) in percent and visualize them in a simple web app, along with the raw light intensities used to calculate the SpO2 (i.e., IR and red frequencies). The web app can be run locally.
 
-**Motivations**: Recent studies have revealed that pulse oximeters show accuracy differences across different skin tones, affecting measurement reliability for some patient populations (Hao et al.). This project for the 2025 Atlanta Science Festival aims to demystify blood oxygen as a vital sign, demonstrate how pulse oximeters work, and highlight the concerning accuracy variations that can impact clinical assessment. By raising awareness about these differences in non-invasive medical devices, we hope to inspire additional efforts to ensure all patients receive equally accurate care regardless of skin color.
+**Motivation**: Recent studies have revealed that pulse oximeters show accuracy differences across different skin tones, affecting measurement reliability for some patient populations (Hao et al.). This project for the 2025 Atlanta Science Festival aims to demystify blood oxygen as a vital sign, demonstrate how pulse oximeters work, and highlight the concerning accuracy variations that can impact clinical assessment. By raising awareness about these differences in non-invasive medical devices, we hope to inspire additional efforts to ensure all patients receive equally accurate care regardless of skin color.
 
 1. [Utility of Skin Tone on Pulse Oximetry in Critically Ill Patients: A Prospective Cohort Study](https://pmc.ncbi.nlm.nih.gov/articles/PMC11392475/), Hao et al., Crit Care Explor, 2024.
 
@@ -13,6 +13,7 @@
 2. Install dependencies: run ```npm install``` in both the ```bridge``` and ```web-app``` directories.
 3. In this repo within ```bridge``` directory, first run the bridge script with ```node server.js```. This allows data to flow between the Pi Pico and your local machine.
 4. Then in a new terminal window, inside ```web-app``` directory, execute ```npm run dev```. Open the local URL displayed to see visualization with finger on sensor.
+5. The web app will plot a continuous stream of data: (a) SpO2 values on one tab, and (b) raw IR and red light intensity values used to caluculate SpO2 using a simplified formula for SpO2.
 
 ## Overview
 
