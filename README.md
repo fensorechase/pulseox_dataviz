@@ -1,6 +1,6 @@
 # pulseox_dataviz
 
-This project uses a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to capture oxygen saturation level (SpO2) in percent and visualize them.
+This project uses a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to capture oxygen saturation level (SpO2) in percent and visualize them, along with the raw light intensities used to calculate the SpO2 (i.e., IR and red frequencies).
 
 ## How to run
 
@@ -56,6 +56,8 @@ pulseox_dataviz/
 
 ## Hardware Setup
 
+Preliminary note: the MAX30102 sensor is very sensitie to movement in this circuit -- handle the sensor very gently when the light is on and taking measurements, or else the data stream may be interrupted. If this happens and the red light goes out, restart both local scripts.
+
 Connect the MAX30102 sensor to the Raspberry Pi Pico using the following pins:
 
 | MAX30102 Pin | Pico Pin | Wire Color |
@@ -105,10 +107,13 @@ graph LR
     style MAX_SCL fill:#ff9999
 ```
 
+![alt text](img/Full_1_Breadboard.jpeg)
+
+
 ## Helpful Related Projects/Tools
 
 1. doug-burrell in repo [max30102](https://github.com/doug-burrell/max30102/blob/master/max30102.py)
 2. To convert repo to txt (useful for chatting with LLMs about code base): [repo2txt tool](https://repo2txt.simplebasedomain.com/).
-4. Project inspiration:
+3. Project inspiration:
     - [MAX30102 tutorial](https://dev.to/shilleh/how-to-measure-heart-rate-and-blood-oxygen-levels-with-max30102-sensor-on-a-raspberry-pi-using-python-50hc)
     - [Extra tutorial with different devices](https://github.com/tobiasisenberg/OxiVis/blob/master/example-data/oximeter-20200705-145239-83376-test%20trace.pdf)

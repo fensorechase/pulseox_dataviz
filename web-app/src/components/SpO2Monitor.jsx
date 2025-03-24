@@ -44,14 +44,19 @@ const SpO2Monitor = () => {
     ws.current.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
+        console.log("Received message:", message);
 
         if (message.type === 'spo2' && typeof message.spo2 === 'number') {
           setSpo2Data(prevData => {
-            const relativeTime = (message.timestamp - startTime) / 1000;
+            // Use the message timestamp or current time if not provided
+            const messageTime = message.timestamp || Date.now();
+            const relativeTime = (messageTime - startTime) / 1000;
+            
             const newPoint = {
               relativeTime,
               spo2: message.spo2
             };
+            
             const newData = [...prevData, newPoint].slice(-100);
             
             if (newData.length > 0) {
@@ -83,22 +88,74 @@ const SpO2Monitor = () => {
         ws.current.close();
       }
     };
-  }, [startTime]);
+}, [startTime]);
 
-  const resetMonitoring = useCallback(() => {
-    // Clear all data immediately
-    setSpo2Data([]);
-    setStats({ min: 0, max: 0, avg: 0 });
-    setStartTime(Date.now());
-    
-    // Clear any existing WebSocket connection
-    if (ws.current?.readyState === WebSocket.OPEN) {
+const resetMonitoring = useCallback(() => {
+  console.log("Resetting monitoring...");
+  
+  // Close existing connection first
+  if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.close();
-    }
-    
-    // Reconnect to start fresh
-    connectToBridge();
-  }, [connectToBridge]);
+  }
+  ws.current = null; // Clear the WebSocket reference
+
+  // Reset all state completely
+  setSpo2Data([]); // Clear SpO2 data
+  setRawData({ red: [], ir: [], timestamp: null }); // Clear raw data
+  setStats({ min: 0, max: 0, avg: 0 }); // Reset stats
+  
+  // Create completely new start time
+  const newStartTime = Date.now();
+  setStartTime(newStartTime);
+  
+  // Small delay to ensure everything is cleared
+  setTimeout(() => {
+      // Create new WebSocket connection
+      ws.current = new WebSocket('ws://localhost:3001');
+      
+      // Setup new handlers
+      ws.current.onopen = () => {
+          console.log("WebSocket reconnected after reset");
+          setIsConnected(true);
+          setError(null);
+      };
+      
+      ws.current.onclose = () => {
+          console.log("WebSocket disconnected");
+          setIsConnected(false);
+          setError('Connection lost. Retrying...');
+          setTimeout(connectToBridge, 2000);
+      };
+      
+      ws.current.onmessage = event => {
+          try {
+              const message = JSON.parse(event.data);
+              
+              if (message.type === 'spo2' && typeof message.spo2 === 'number') {
+                  setSpo2Data(prevData => {
+                      const relativeTime = (message.timestamp - newStartTime) / 1000;
+                      const newPoint = {
+                          relativeTime,
+                          spo2: message.spo2
+                      };
+                      return [...prevData, newPoint].slice(-100);
+                  });
+              } 
+              else if (message.type === 'raw') {
+                  setRawData({
+                      red: message.data?.red || message.red || [],
+                      ir: message.data?.ir || message.ir || [],
+                      timestamp: message.timestamp || Date.now()
+                  });
+              }
+          } catch (e) {
+              console.error("Error processing message after reset:", e);
+          }
+      };
+      
+      console.log("Monitoring reset complete, new start time:", newStartTime);
+  }, 100);
+}, []); // Remove connectToBridge from dependencies
 
   useEffect(() => {
     const cleanup = connectToBridge();
