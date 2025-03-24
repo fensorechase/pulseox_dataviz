@@ -1,6 +1,10 @@
 # pulseox_dataviz
 
-This project uses a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to capture oxygen saturation level (SpO2) in percent and visualize them, along with the raw light intensities used to calculate the SpO2 (i.e., IR and red frequencies).
+**Background**: This project was developed to demonstrate what blood oxygen saturation is, and how a device (e.g., pulse oximeter) can approximate blood oxygen saturation from a non-invasive measurement on the finger. We use a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to calculate oxygen saturation level (SpO2) in percent and visualize them in a simple web app, along with the raw light intensities used to calculate the SpO2 (i.e., IR and red frequencies). The web app can be run locally.
+
+**Motivations**: Recent studies have revealed that pulse oximeters show accuracy differences across different skin tones, affecting measurement reliability for some patient populations (Hao et al.). This project for the 2025 Atlanta Science Festival aims to demystify blood oxygen as a vital sign, demonstrate how pulse oximeters work, and highlight the concerning accuracy variations that can impact clinical assessment. By raising awareness about these differences in non-invasive medical devices, we hope to inspire additional efforts to ensure all patients receive equally accurate care regardless of skin color.
+
+1. [Utility of Skin Tone on Pulse Oximetry in Critically Ill Patients: A Prospective Cohort Study](https://pmc.ncbi.nlm.nih.gov/articles/PMC11392475/), Hao et al., Crit Care Explor, 2024.
 
 ## How to run
 
@@ -55,6 +59,11 @@ pulseox_dataviz/
 └── index.html
 
 ## Hardware Setup
+
+All hardware required to set up the circuit can be purchased at the following sources (as of March 2025):
+
+- SunFounder Raspberry Pi Pico kit: $40 each [Amazon](https://www.amazon.com/SunFounder-Raspberry-Tutorials-Electronics-Programming/dp/B08XXHGSQ7)
+- MAX30102 SpO2 sensor, 2 pieces: $7 each [Amazon](https://www.amazon.com/dp/B09LQDW27N?tag=xdadev04-20&ascsubtag=UUxdaUeUpU1015050&asc_refurl=https%3A%2F%2Fwww.xda-developers.com%2Fpulse-oximeter-raspberry-pi-pico%2F&asc_campaign=Short-Term)
 
 Preliminary note: the MAX30102 sensor is very sensitie to movement in this circuit -- handle the sensor very gently when the light is on and taking measurements, or else the data stream may be interrupted. If this happens and the red light goes out, restart both local scripts.
 
