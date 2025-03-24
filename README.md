@@ -13,7 +13,11 @@
 2. Install dependencies: run ```npm install``` in both the ```bridge``` and ```web-app``` directories.
 3. In this repo within ```bridge``` directory, first run the bridge script with ```node server.js```. This allows data to flow between the Pi Pico and your local machine.
 4. Then in a new terminal window, inside ```web-app``` directory, execute ```npm run dev```. Open the local URL displayed to see visualization with finger on sensor.
-5. The web app will plot a continuous stream of data: (a) SpO2 values on one tab, and (b) raw IR and red light intensity values used to caluculate SpO2 using a simplified formula for SpO2.
+5. The web app will plot a continuous stream of data: (a) SpO2 values on one tab, and (b) raw IR and red light intensity values used to caluculate SpO2 using a simplified formula for SpO2. An example below:
+
+![alt text](img/spo2_tab.jpg)
+
+![alt text](img/raw_signals_tab.jpg)
 
 ## Overview
 
