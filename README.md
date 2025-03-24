@@ -4,13 +4,15 @@ This project uses a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to capt
 
 ## How to run
 
-1. Connect computer and Raspberry Pi Pico, and uploading main.py and max30102.py onto the Raspberry Pi Pico (via Thonny). Press play on main.py, then quit Thonny.
-2. In this repo within bridge/, run 'node server.js'.
-3. Then inside web-app/, run 'npm run dev'. Open web page to see visualization with finger on sensor.
+1. Connect computer and Raspberry Pi Pico, and uploading ```main.py``` and ```max30102.py``` onto the Raspberry Pi Pico (e.g., via Thonny). Press play on ```main.py```, then quit Thonny.
+   - When you plug the Pi Pico into your laptop/local machine, the MAX sensor should light up red -- this indicates the Pi Pico is running ```main.py``` and reading serial data from the MAX sensor.
+2. Install dependencies: run ```npm install``` in both the ```bridge``` and ```web-app``` directories.
+3. In this repo within ```bridge``` directory, first run the bridge script with ```node server.js```. This allows data to flow between the Pi Pico and your local machine.
+4. Then in a new terminal window, inside ```web-app``` directory, execute ```npm run dev```. Open the local URL displayed to see visualization with finger on sensor.
 
 ## Overview
 
-spo2-monitor/
+pulseox_dataviz/
 
 ├── bridge/
 
@@ -52,15 +54,61 @@ spo2-monitor/
 
 └── index.html
 
-## Inspiration from
+## Hardware Setup
 
-- doug-burrell in repo 'max30102' (https://github.com/doug-burrell/max30102/blob/master/max30102.py)
-- Notes from doug-burrell: "To use the code, instantiate the HeartRateMonitor class found in heartrate_monitor.py. The thread is used by running start_sensor and stop_sensor. While the thread is running you can read bpm to get the active beats per minute. Note that a few seconds are required to get a reliable BPM value and the sensor is very sensitive to movement so a steady finger is required!"
+Connect the MAX30102 sensor to the Raspberry Pi Pico using the following pins:
 
-## Helpful tools
+| MAX30102 Pin | Pico Pin | Wire Color |
+|-------------|----------|------------|
+| VIN         | 3V3      | Red        |
+| GND         | GND      | Blue       |
+| SCL         | GP1      | Red        |
+| SDA         | GP0      | Yellow     |
 
-1. Convert repo to txt (useful for chatting with LLMs about code base): https://repo2txt.simplebasedomain.com/
-2. Project inspiration: 
-    - https://dev.to/shilleh/how-to-measure-heart-rate-and-blood-oxygen-levels-with-max30102-sensor-on-a-raspberry-pi-using-python-50hc
-    - (Repo for the above tutorial) https://github.com/doug-burrell/max30102
-    - Extra tutorial (good viz example, different devices though): https://github.com/tobiasisenberg/OxiVis/blob/master/example-data/oximeter-20200705-145239-83376-test%20trace.pdf
+**Notes:**
+
+- The MAX30102 sensor uses I2C communication protocol
+- The sensor operates at 3.3V (connect to 3V3, not VBUS)
+
+```mermaid
+graph LR
+    subgraph Raspberry Pi Pico
+        PICO_GND[GND]
+        PICO_3V3[3V3]
+        PICO_SDA[SDA/GP0]
+        PICO_SCL[SCL/GP1]
+    end
+
+    subgraph MAX30102 Sensor
+        MAX_GND[GND]
+        MAX_VIN[VIN]
+        MAX_SCL[SCL]
+        MAX_SDA[SDA]
+    end
+
+    %% Power connections
+    PICO_3V3 -->|Red wire| MAX_VIN
+    PICO_GND -->|Blue wire| MAX_GND
+
+    %% I2C connections
+    PICO_SDA -->|Yellow wire| MAX_SDA
+    PICO_SCL -->|Red wire| MAX_SCL
+
+    style PICO_3V3 fill:#ff9999
+    style PICO_GND fill:#9999ff
+    style PICO_SDA fill:#ffff99
+    style PICO_SCL fill:#ff9999
+    
+    style MAX_VIN fill:#ff9999
+    style MAX_GND fill:#9999ff
+    style MAX_SDA fill:#ffff99
+    style MAX_SCL fill:#ff9999
+```
+
+## Helpful Related Projects/Tools
+
+1. doug-burrell in repo [max30102](https://github.com/doug-burrell/max30102/blob/master/max30102.py)
+2. To convert repo to txt (useful for chatting with LLMs about code base): [repo2txt tool](https://repo2txt.simplebasedomain.com/).
+4. Project inspiration:
+    - [MAX30102 tutorial](https://dev.to/shilleh/how-to-measure-heart-rate-and-blood-oxygen-levels-with-max30102-sensor-on-a-raspberry-pi-using-python-50hc)
+    - [Extra tutorial with different devices](https://github.com/tobiasisenberg/OxiVis/blob/master/example-data/oximeter-20200705-145239-83376-test%20trace.pdf)
