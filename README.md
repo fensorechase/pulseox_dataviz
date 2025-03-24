@@ -15,9 +15,9 @@
 4. Then in a new terminal window, inside ```web-app``` directory, execute ```npm run dev```. Open the local URL displayed to see visualization with finger on sensor.
 5. The web app will plot a continuous stream of data: (a) SpO2 values on one tab, and (b) raw IR and red light intensity values used to caluculate SpO2 using a simplified formula for SpO2. An example below:
 
-![alt text](img/1_spo2_tab.jpg)
+![alt text](img/2_spo2_tab.jpg)
 
-![alt text](img/2_raw_signals_tab.jpg)
+![alt text](img/1_raw_signals_tab.jpg)
 
 ## Overview
 
