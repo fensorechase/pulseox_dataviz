@@ -8,13 +8,20 @@
 1. [Utility of Skin Tone on Pulse Oximetry in Critically Ill Patients: A Prospective Cohort Study](https://pmc.ncbi.nlm.nih.gov/articles/PMC11392475/), Hao et al., Crit Care Explor, 2024.
 
 ## How to run
+Setup: 
+1. Install an IDE of your choice for running bridge server and local web app (e.g., [VSCode]([url](https://code.visualstudio.com/download))), and your preferred IDE for micropython (e.g., [Thonny]([url](https://thonny.org/))).
+2. Assemble components on your breadboard according to the diagram below. 
+3. Follow these instructions from the Raspberry Pi documentation to download the and install the latest micropython version for Raspberry Pi Pico: [here](https://www.raspberrypi.com/documentation/microcontrollers/micropython.html).
+4. After opening Thonny and re-connecting the Pico, ensure the Pico is in serial mode by selecting the serial Pico device from connections.
 
-1. Connect computer and Raspberry Pi Pico, and uploading ```main.py``` and ```max30102.py``` onto the Raspberry Pi Pico (e.g., via Thonny). Press play on ```main.py```, then quit Thonny.
+
+1. Clone this repo: ```git clone https://github.com/fensorechase/pulseox_dataviz.git```
+2. Connect laptop and Raspberry Pi Pico via micro USB, and uploading ```main.py``` and ```max30102.py``` onto the Raspberry Pi Pico (e.g., via Thonny). Press play on ```main.py```, then quit Thonny.
    - When you plug the Pi Pico into your laptop/local machine, the MAX sensor should light up red -- this indicates the Pi Pico is running ```main.py``` and reading serial data from the MAX sensor.
-2. Install dependencies: run ```npm install``` in both the ```bridge``` and ```web-app``` directories.
-3. In this repo within ```bridge``` directory, first run the bridge script with ```node server.js```. This allows data to flow between the Pi Pico and your local machine.
-4. Then in a new terminal window, inside ```web-app``` directory, execute ```npm run dev```. Open the local URL displayed to see visualization with finger on sensor.
-5. The web app will plot a continuous stream of data: (a) SpO2 values on one tab, and (b) raw IR and red light intensity values used to caluculate SpO2 using a simplified formula for SpO2. An example below:
+3. Next install dependencies for the bridge and web app: run ```npm install``` in both the ```bridge``` and ```web-app``` directories.
+4. Start bridge server: In this repo within ```bridge``` directory, first run the bridge script with ```node server.js```. This allows serial data to flow between the Pi Pico and your laptop.
+5. Start web app: Then in a new terminal window, inside ```web-app``` directory, execute ```npm run dev```. Open the local URL displayed to see visualization with finger on sensor.
+6. Open web app visualation: The web app will plot a continuous stream of data: (a) SpO2 values on one tab, and (b) raw IR and red light intensity values used to caluculate SpO2 using a simplified formula for SpO2. An example below:
 
 ![alt text](img/2_spo2_tab.jpg)
 
