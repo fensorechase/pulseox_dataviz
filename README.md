@@ -1,4 +1,4 @@
-# Demo: Finger Pulse Oximeter Real-time Data Visualization
+# Demo: Fingertip Pulse Oximeter Real-time Data Visualization
 ## From Emory [OpenBMI]([url](https://med.emory.edu/departments/biomedical-informatics/outreach/open-bmi.html)), Department of Biomedical Informatics
 
 **Background**: This project was developed to demonstrate what blood oxygen saturation is, and how a device (e.g., pulse oximeter) can approximate blood oxygen saturation from a non-invasive measurement on the finger. We use a MAX30102 Pulse Oximetry Sensor and Raspberry Pi Pico to calculate oxygen saturation level (SpO2) in percent and visualize them in a simple web app, along with the raw light intensities used to calculate the SpO2 (i.e., IR and red frequencies). The web app can be run locally.
