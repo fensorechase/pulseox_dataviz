@@ -15,6 +15,7 @@ Setup:
 4. After opening Thonny and re-connecting the Pico, ensure the Pico is in serial mode by selecting the serial Pico device from connections.
 
 
+Prepare to run:
 1. Clone this repo: ```git clone https://github.com/fensorechase/pulseox_dataviz.git```
 2. Connect laptop and Raspberry Pi Pico via micro USB, and uploading ```main.py``` and ```max30102.py``` onto the Raspberry Pi Pico (e.g., via Thonny). Press play on ```main.py```, then quit Thonny.
    - When you plug the Pi Pico into your laptop/local machine, the MAX sensor should light up red -- this indicates the Pi Pico is running ```main.py``` and reading serial data from the MAX sensor.
